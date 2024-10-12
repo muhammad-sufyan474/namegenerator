@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Name Generator</title>
+    <style>
+        body,
+        html {
+            margin: 0px;
+            height: 100%;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            background-image: url(names.jpg);
+            background-size: cover;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted black;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: red;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+        .name-cell {
+            text-align: center;
+        }
+        .main {
+            position: relative;
+            z-index: 10; /* Ensure content is above background */
+        }
+    </style>
+</head>
+<body>
+    <div class="main container mt-5">
+        <h1 class="text-center" style="color: blue;text-shadow: 2px 2px 5px gray; font-weight: bold;">Random Name Generator</h1>
+        <div class="form-group">
+            <label for="nameInput">Enter names (comma-separated):</label>
+            <input type="text" class="form-control" id="nameInput" style="text-transform: capitalize;" oninput="showCount()" placeholder="e.g. Abc, Def, Xyz">
+            <div style="display: flex; justify-content: space-between;">
+                <p id="inputError" style="color: red; display: none; font-weight: 500; margin-left: 7px;">
+                    <i class="fa fa-info-circle"></i> Please enter at least 13 Names to proceed.
+                </p>
+                <span style="color: red; font-weight: 500;">Total Names: <span id="showNameCount">0</span></span>
+            </div>
+        </div>
+        <button id="generateButton" class="btn btn-primary">Generate Names</button>
+        <button id="exportButton" disabled style="cursor: no-drop;" class="btn btn-success tooltip">Export to Excel 
+            <span id="tooltiptextId" class="tooltiptext">Make sure you Generated Names!</span>
+        </button>
+        <h2 class="mt-4">Generated Names:</h2>
+        <table class="table table-bordered" style="color: white;">
+            <thead style="background-color: darkblue;">
+                <tr>
+                    <th>Serial</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody id="nameList"></tbody>
+        </table>
+        <h2 class="mt-4" style="color: greenyellow; text-align: center;">Analytics:</h2>
+        <ul id="nameCountList" class="list-group" style="color: black;"></ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        window.onload = function() {
+            document.getElementById("nameInput").focus();
+        };
+
+        function showCount() { 
+            const input = document.getElementById("nameInput").value;
+            const names = input.split(',').map(name => name.trim()).filter(name => name);
+            document.getElementById("showNameCount").innerHTML = names.length;
+        }
+
+        document.getElementById("generateButton").addEventListener("click", function() {
+            const input = document.getElementById("nameInput").value;
+            console.log(input);
+            const names = input.split(',').map(name => name.trim()).filter(name => name);
+            const nameCount = names.length;
+
+            if (nameCount < 13) {
+                document.getElementById("inputError").style.display = "block";
+                document.getElementById("nameInput").focus();
+                return;
+            } 
+            else {
+                document.getElementById("inputError").style.display = "none";
+                document.getElementById('exportButton').disabled = false;
+                document.getElementById('exportButton').style.cursor = "pointer";
+                document.getElementById("tooltiptextId").innerHTML = "";
+                document.getElementById("exportButton").classList.remove("tooltip");
+            }
+
+            const min = 3;
+            const max = 12;
+            const totalNames = 100;
+
+            // Generate counts for each name
+            const counts = names.map(name => ({
+                name,
+                count: Math.floor(Math.random() * (max - min + 1)) + min
+            }));
+
+            // Create the list based on counts
+            const result = [];
+            counts.forEach(countObj => {
+                for (let i = 0; i < countObj.count; i++) {
+                    result.push(countObj.name);
+                }
+            });
+
+            // Shuffle the result array
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+
+            const finalResult = [];
+            const nameQueue = [...result];
+
+            function canAddName(name) {
+                const gap = 3; // Number of names between repetitions
+                const length = finalResult.length;
+                for (let i = 1; i <= gap; i++) {
+                    if (finalResult[length - i] === name) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            while (finalResult.length < totalNames && nameQueue.length > 0) {
+                const randomIndex = Math.floor(Math.random() * nameQueue.length);
+                const selectedName = nameQueue[randomIndex];
+
+                if (canAddName(selectedName)) {
+                    finalResult.push(selectedName);
+                    nameQueue.splice(randomIndex, 1); // Remove used name
+
+                    // Refill the queue if necessary
+                    if (nameQueue.length === 0) {
+                        nameQueue.push(...result);
+                    }
+                }
+            }
+
+            // Count occurrences and assign colors
+            const nameOccurrences = {};
+            const colors = {};
+
+            finalResult.forEach(name => {
+                nameOccurrences[name] = (nameOccurrences[name] || 0) + 1;
+                if (!colors[name]) {
+                    colors[name] = `#${Math.floor(Math.random() * 16777215).toString(16)}`; // Assign a random color
+                }
+            });
+
+            // Display the result in a table format
+            const nameList = document.getElementById("nameList");
+            nameList.innerHTML = '';
+            finalResult.forEach((name, index) => {
+                const listItem = document.createElement("tr");
+                listItem.innerHTML = `
+                    <td class="name-cell">${index + 1}</td>
+                    <td class="name-cell" style="background-color: ${colors[name]};">${name}</td>
+                `;
+                nameList.appendChild(listItem);
+            });
+
+            // Display name counts
+            const nameCountList = document.getElementById("nameCountList");
+            nameCountList.innerHTML = '';
+            for (const [name, count] of Object.entries(nameOccurrences)) {
+                const listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.textContent = `${name}: ${count}`;
+                nameCountList.appendChild(listItem);
+            }
+        });
+
+        // Export to Excel
+        document.getElementById("exportButton").addEventListener("click", function() {
+            const nameList = document.getElementById("nameList");
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const rows = Array.from(nameList.querySelectorAll('tr')).map(tr => {
+                const cols = Array.from(tr.querySelectorAll('td')).map(td => td.textContent);
+                return cols.join(",");
+            });
+            rows.forEach(row => {
+                csvContent += row + "\r\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "generated_names.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
