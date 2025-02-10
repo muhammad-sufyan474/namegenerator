@@ -88,68 +88,70 @@
         function capitalizeFirstLetter(name) {
             return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
         }
-
+    
         function showCount() {
             const input = document.getElementById("nameInput").value;
             const names = input.split(',').map(name => capitalizeFirstLetter(name.trim())).filter(name => name);
             document.getElementById("showNameCount").innerHTML = names.length;
         }
-
+    
         document.getElementById("generateButton").addEventListener("click", function () {
             const input = document.getElementById("nameInput").value;
             const names = input.split(',').map(name => capitalizeFirstLetter(name.trim())).filter(name => name);
             const nameCount = names.length;
-
+    
             if (nameCount < 13) {
                 document.getElementById("inputError").style.display = "block";
                 document.getElementById("nameInput").focus();
                 return;
             }
-
+    
             document.getElementById("inputError").style.display = "none";
             document.getElementById('exportButton').disabled = false;
             document.getElementById('exportButton').style.cursor = "pointer";
             document.getElementById("tooltiptextId").innerHTML = "";
             document.getElementById("exportButton").classList.remove("tooltip");
-
+    
+            // Minimum and maximum repetitions for each name
             const min = 7;
             const max = 10;
-            const totalNames = Math.min(100, nameCount * 10);
-
+    
+            // Generate counts for each name ensuring the minimum and maximum constraints
             const counts = names.map(name => ({
                 name,
-                count: Math.floor(Math.random() * (max - min + 1)) + min
+                count: Math.floor(Math.random() * (max - min + 1)) + min // Random between 7 and 10
             }));
-
+    
+            // Create a result array with names repeated according to their counts
             const result = [];
             counts.forEach(countObj => {
                 for (let i = 0; i < countObj.count; i++) {
                     result.push(countObj.name);
                 }
             });
-
+    
+            // Shuffle the array to randomize the order
             shuffleArray(result);
-
+    
+            // Generate the final result array while maintaining a gap between repeated names
             const finalResult = [];
-            const nameQueue = [...result];
-
-            while (finalResult.length < totalNames && nameQueue.length > 0) {
-                const randomIndex = Math.floor(Math.random() * nameQueue.length);
+            const nameQueue = [...result]; // Create a queue from the result array
+    
+            while (finalResult.length < result.length && nameQueue.length > 0) {
+                const randomIndex = Math.floor(Math.random() * nameQueue.length); // Pick a random name
                 const selectedName = nameQueue[randomIndex];
-
+    
                 if (canAddName(finalResult, selectedName)) {
-                    finalResult.push(selectedName);
-                    nameQueue.splice(randomIndex, 1);
-                    if (nameQueue.length === 0) {
-                        nameQueue.push(...result);
-                    }
+                    finalResult.push(selectedName); // Add name to the final result
+                    nameQueue.splice(randomIndex, 1); // Remove the selected name from the queue
                 }
             }
-
+    
+            // Display the final results
             displayResults(finalResult);
             displayNameCounts(finalResult);
         });
-
+    
         function canAddName(finalResult, name) {
             const gap = 3; // Number of names between repetitions
             const length = finalResult.length;
@@ -160,14 +162,14 @@
             }
             return true;
         }
-
+    
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
             }
         }
-
+    
         function displayResults(finalResult) {
             const nameOccurrences = {};
             const colors = {};
@@ -177,7 +179,7 @@
                     colors[name] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
                 }
             });
-
+    
             const nameList = document.getElementById("nameList");
             nameList.innerHTML = '';
             finalResult.forEach((name, index) => {
@@ -189,13 +191,13 @@
                 nameList.appendChild(listItem);
             });
         }
-
+    
         function displayNameCounts(finalResult) {
             const nameOccurrences = {};
             finalResult.forEach(name => {
                 nameOccurrences[name] = (nameOccurrences[name] || 0) + 1;
             });
-
+    
             const nameCountList = document.getElementById("nameCountList");
             nameCountList.innerHTML = '';
             for (const [name, count] of Object.entries(nameOccurrences)) {
@@ -205,7 +207,7 @@
                 nameCountList.appendChild(listItem);
             }
         }
-
+    
         document.getElementById("exportButton").addEventListener("click", function () {
             const nameList = document.getElementById("nameList");
             let csvContent = "data:text/csv;charset=utf-8,";
@@ -225,5 +227,6 @@
             document.body.removeChild(link);
         });
     </script>
+    
 </body>
 </html>
